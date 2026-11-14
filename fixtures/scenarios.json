@@ -1,0 +1,50 @@
+{
+  "entry": "/schemas",
+  "documents": [
+    {
+      "id": "entry",
+      "path": "index.json",
+      "format": "json",
+      "file": "00.raw",
+      "task": "task-1",
+      "batch": "batch-local",
+      "serviceRoot": "/raw/",
+      "revision": 1
+    },
+    {
+      "id": "node",
+      "path": "node.json",
+      "format": "json",
+      "file": "01.raw",
+      "task": "task-1",
+      "batch": "batch-local",
+      "serviceRoot": "/raw/",
+      "revision": 1
+    },
+    {
+      "id": "strict",
+      "path": "strict.json",
+      "format": "json",
+      "file": "02.raw",
+      "task": "task-1",
+      "batch": "batch-local",
+      "serviceRoot": "/raw/",
+      "revision": 1
+    }
+  ],
+  "changedDocument": "node",
+  "replaceFrom": "\"name\":{\"type\":\"string\"}",
+  "replaceTo": "\"name\":{\"type\":\"integer\"}",
+  "expectedIds": [
+    "base:node",
+    "strict:node"
+  ],
+  "transmissionWindow": [
+    "2026-10-31T23:00:00Z",
+    "2026-11-01T01:00:00Z"
+  ],
+  "canonicalResources": {
+    "https://forms.local/node": "node.json",
+    "https://forms.local/strict": "strict.json"
+  }
+}
