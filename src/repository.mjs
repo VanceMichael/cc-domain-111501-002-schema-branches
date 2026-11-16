@@ -5,7 +5,7 @@ import { join } from 'node:path';
 export class Repository {
   constructor(directory) {
     this.directory = directory;
-    this.state = { records: {}, cursors: {}, evidence: {}, notes: [] };
+    this.state = { records: {}, cursors: {}, evidence: {}, notes: [], managed: { files: {}, entries: [], phases: {} } };
   }
 
   async open() {
@@ -15,6 +15,9 @@ export class Repository {
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
     }
+    // 旧存储没有 managed 计划时补齐空结构，旧记录与原始字节继续可读。
+    this.state.managed ??= { files: {}, entries: [], phases: {} };
+    this.state.notes ??= [];
     return this;
   }
 
@@ -30,13 +33,28 @@ export class Repository {
     await this.save();
   }
 
+  // 同一内容只留存一份：已存在的 digest 直接复用，不产生重复原始证据。
   async retain(origin, body, metadata = {}) {
     const bytes = Buffer.from(body);
     const digest = createHash('sha256').update(bytes).digest('hex');
-    await writeFile(join(this.directory, 'raw', digest), bytes);
-    this.state.evidence[digest] = { origin, ...metadata, size: bytes.length };
-    await this.save();
+    if (!this.state.evidence[digest]) {
+      await writeFile(join(this.directory, 'raw', digest), bytes);
+      this.state.evidence[digest] = { origin, ...metadata, size: bytes.length };
+      await this.save();
+    }
     return digest;
+  }
+
+  // 按证据摘要读回原始字节，供重开进程后重建解释。
+  async readEvidence(digest) {
+    return readFile(join(this.directory, 'raw', digest));
+  }
+
+  // managed 接入计划（目录、取得状态、阶段进度），与记录分开持久化，
+  // 使“原始资料已保存、关系尚未提交”的中断可被重开识别。
+  async saveManaged(plan) {
+    this.state.managed = structuredClone(plan);
+    await this.save();
   }
 
   async cursor(name, value) {
